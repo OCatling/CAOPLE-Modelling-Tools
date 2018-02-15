@@ -6,9 +6,9 @@
 package model.edge;
 
 import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.Polygon;
-import java.awt.Shape;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -19,12 +19,14 @@ import java.awt.geom.Rectangle2D;
  */
 public abstract class Edge extends Line2D {
     public float x1, y1, x2, y2;
+    private boolean selected;
     
     public Edge(double x1, double y1, double x2, double y2){
         this.x1 = (float) x1;
         this.y1 = (float) y1;
         this.x2 = (float) x2;
         this.y2 = (float) y2;
+        this.selected = false;
     }
     
     public Edge(float x1, float y1, float x2, float y2){
@@ -32,6 +34,7 @@ public abstract class Edge extends Line2D {
         this.y1 = y1;
         this.x2 = x2;
         this.y2 = y2;
+        this.selected = false;
     }
 
     @Override
@@ -92,7 +95,33 @@ public abstract class Edge extends Line2D {
             return new Rectangle2D.Float(x, y, w, h);
     }
     
+    public void translate(int a1, int b1, int a2, int b2){
+        this.x1 += a1;
+        this.y1 += b1;
+        this.x2 += a2;
+        this.y2 += b2;
+    }
+    
     public abstract BasicStroke getStroke(); 
     
+    public abstract Color getArrowFill();
+    
+    public abstract Polygon createArrowHead();
+    
+    /**
+     * Accessor method for selected
+     * @return the selected
+     */
+    public boolean isSelected(){
+        return selected;
+    }
+    
+    /**
+     * Mutator method for selected
+     * @param selected the boolean to set
+     */
+    public void setSelected(Boolean selected){
+        this.selected = selected;
+    }
 
 }

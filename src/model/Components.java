@@ -5,12 +5,10 @@
  */
 package model;
 
-import model.edge.Edge;
 import java.awt.Point;
-import java.awt.Shape;
+import model.edge.Edge;
 import java.util.ArrayList;
 import java.util.Observable;
-import model.Node;
 
 /**
  *
@@ -49,5 +47,22 @@ public class Components extends Observable{
     public void triggerUpdate(){
         setChanged();
         notifyObservers();
+    }
+    
+    public void removeNode(Node n){
+        this.nodes.remove(n);
+    }
+    
+    public void removeEdge(Edge e){
+        this.edges.remove(e);
+    }
+    
+    public Node getIntersectingNode(Point p){
+        Node returnNode = null;
+        for(Node n : this.nodes){
+            if(n.getBounds().contains(p.x, p.y))
+                returnNode = n;
+        }
+        return returnNode;
     }
 }
