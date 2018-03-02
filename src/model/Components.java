@@ -15,54 +15,102 @@ import java.util.Observable;
  * @author Oliver
  */
 public class Components extends Observable{
-    ArrayList<Node> nodes;
+    ArrayList<Caste> castes;
     ArrayList<Edge> edges;
     
 
     public Components() {
-        this.nodes = new ArrayList<>();
+        this.castes = new ArrayList<>();
         this.edges = new ArrayList<>();
     }
     
-    public void addNode(Node node){
-        this.nodes.add(node);
+    /**
+     * Add A Caste To Data
+     * @param caste the caste to add
+     */
+    public void addCaste(Caste caste){
+        this.castes.add(caste);
         triggerUpdate();
-    }
+    } // END OF addCaste
     
+    /**
+     * Add A Edge To Data
+     * @param edge 
+     */
     public void addEdge(Edge edge){
         this.edges.add(edge);
         triggerUpdate();
-    }
+    } // END OF addEdge
     
-    public ArrayList<Node> getNodes(){
+    /**
+     * Accessor method for castes
+     * @return the castes
+     */
+    public ArrayList<Caste> getCastes(){
         triggerUpdate();
-        return this.nodes;
-    }
+        return this.castes;
+    } // END OF getCastes
     
+    /**
+     * Accessor methods for edges
+     * @return 
+     */
     public ArrayList<Edge> getEdges(){
         triggerUpdate();
         return this.edges;
-    }
+    } // END OF getEdges
     
+    /**
+     * Used to update the view
+     */
     public void triggerUpdate(){
         setChanged();
         notifyObservers();
-    }
+    } // END OF triggerUpdate
     
-    public void removeNode(Node n){
-        this.nodes.remove(n);
-    }
+    /**
+     * Remove caste from data
+     * @param caste the caste to remove
+     */
+    public void removeCaste(Caste caste){
+        this.castes.remove(caste);
+        triggerUpdate();
+    } // END OF removeCaste
     
-    public void removeEdge(Edge e){
-        this.edges.remove(e);
-    }
+    /**
+     * Remove Edge from data
+     * @param edge the edge to remove 
+     */
+    public void removeEdge(Edge edge){
+        this.edges.remove(edge);
+        triggerUpdate();
+    } // END OF removeEdge
     
-    public Node getIntersectingNode(Point p){
-        Node returnNode = null;
-        for(Node n : this.nodes){
+    /**
+     * Return Caste based on point
+     * @param p the point to get Caste from
+     * @return the Caste
+     */
+    public Caste getIntersectingCaste(Point p){
+        Caste returnCaste = null;
+        for(Caste n : this.castes){
             if(n.getBounds().contains(p.x, p.y))
-                returnNode = n;
+                returnCaste = n;
         }
-        return returnNode;
-    }
+        return returnCaste;
+    } // END OF getIntersectingCaste
+    
+    /**
+     * Return Edge based on point
+     * @param p the point to get Edge from
+     * @return the Edge
+     */
+    public Edge getIntersectingEdge(Point p){
+        Edge returnEdge = null;
+        for(Edge e : this.edges){
+            if(e.getBounds().contains(p.x, p.y))
+                returnEdge = e;
+        }
+        return returnEdge;
+    } // END OF getIntersectingEdge
 }

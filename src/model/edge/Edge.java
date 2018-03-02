@@ -20,6 +20,7 @@ import java.awt.geom.Rectangle2D;
 public abstract class Edge extends Line2D {
     public float x1, y1, x2, y2;
     private boolean selected;
+    private String title;
     
     public Edge(double x1, double y1, double x2, double y2){
         this.x1 = (float) x1;
@@ -27,6 +28,7 @@ public abstract class Edge extends Line2D {
         this.x2 = (float) x2;
         this.y2 = (float) y2;
         this.selected = false;
+        this.title = "";
     }
     
     public Edge(float x1, float y1, float x2, float y2){
@@ -35,6 +37,7 @@ public abstract class Edge extends Line2D {
         this.x2 = x2;
         this.y2 = y2;
         this.selected = false;
+        this.title = "";
     }
 
     @Override
@@ -122,6 +125,20 @@ public abstract class Edge extends Line2D {
      */
     public void setSelected(Boolean selected){
         this.selected = selected;
+    }
+
+    /**
+     * @return the title
+     */
+    public String getTitle() {
+        return title;
+    }
+
+    /**
+     * @param title the title to set
+     */
+    public void setTitle(String title) {
+        this.title = title;
     }
 
 }

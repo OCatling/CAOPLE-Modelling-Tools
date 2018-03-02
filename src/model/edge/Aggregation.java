@@ -7,10 +7,7 @@ package model.edge;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Point;
 import java.awt.Polygon;
-import java.awt.Shape;
-import java.awt.geom.AffineTransform;
 
 /**
  *

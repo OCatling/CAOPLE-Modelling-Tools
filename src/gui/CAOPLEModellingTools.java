@@ -3,9 +3,7 @@ package gui;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import java.awt.geom.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Observable;
 import java.util.Observer;
 import model.edge.Aggregation;
@@ -16,7 +14,6 @@ import model.edge.Edge;
 import model.edge.Inheritence;
 import model.edge.Interaction;
 import model.edge.Migration;
-import model.Node;
 
 
 /**
@@ -110,9 +107,12 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
     /* --- COMPONENT USED FOR CREATING GRAPHICAL REPRESENTATION OF MODEL --- */
     private class ModellingBoard extends JPanel {
         private Point start, finish;
+        private static final int FONT_SIZE = 16;
+        private final Font font;
         
         public ModellingBoard(){
             super();
+            this.font = new Font("TimesRoman", Font.PLAIN, FONT_SIZE);
             this.setPreferredSize(new Dimension(1080, 900));
             this.setBackground(Color.WHITE);
             this.addMouseListener(new MouseAdapter(){
@@ -121,21 +121,30 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
                 public void mousePressed(MouseEvent event){
                     start = event.getPoint();
                     finish = start; 
-                    if(currentAction.equalsIgnoreCase("Select") 
-                            && event.getClickCount() == 2 
-                            && !noNodeIntersect()){
-                        Caste c = (Caste) model.getIntersectingNode(start);
-                        model.removeNode(c);
-                        CasteDetails details = new CasteDetails(c);model.removeNode(c);
-                        model.addNode(details.caste);   
-                        toggleAvailaibilty();
+                    if(currentAction.equalsIgnoreCase("Select") && event.getClickCount() == 2){
+                        if(model.getIntersectingCaste(start) != null){
+                            Caste c = model.getIntersectingCaste(start);
+                            CasteDetails details = new CasteDetails(c);
+                            model.removeCaste(c);
+                            model.addCaste(details.caste);   
+                            toggleAvailaibilty();
+                        
+                        } else if(model.getIntersectingEdge(start) != null){
+                            Edge e = model.getIntersectingEdge(start);
+                            if(e instanceof Interaction){
+                                EdgeDetails details = new EdgeDetails(e);
+                                model.removeEdge(e);
+                                model.addEdge(details.edge);   
+                                toggleAvailaibilty();
+                            }
+                        }
                     }
                 } // END OF mousePressed
                 
                 @Override
                 public void mouseReleased(MouseEvent event){
                     if(currentAction.equalsIgnoreCase("Select")){
-                        for(Node n : model.getNodes()){
+                        for(Caste n : model.getCastes()){
                             if(n.contains(event.getPoint()) && !n.isSelected()){
                                n.setSelected(true);
                             } else {
@@ -151,14 +160,17 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
                         }
                     }
                     else if(currentAction.equalsIgnoreCase("Caste") 
-                            && noNodeIntersect() ){
+                            && model.getIntersectingCaste(start) == null ){
                         Caste c = createCaste();
                         CasteDetails details = new CasteDetails(c);
-                        model.addNode(details.caste);   
+                        model.addCaste(details.caste);   
                         toggleAvailaibilty();
                     }
                     else if(currentAction.equalsIgnoreCase("Interaction")){
-                        model.addEdge(new Interaction(start.x, start.y, event.getX(), event.getY() ));
+                        toggleAvailaibilty();
+                        Interaction i = new Interaction(start.x, start.y, event.getX(), event.getY());
+                        EdgeDetails e = new EdgeDetails(i);
+                        model.addEdge(e.edge);
                     } 
                     else if(currentAction.equalsIgnoreCase("Composition")){
                         model.addEdge(new Composition(start.x, start.y, event.getX(), event.getY() ));
@@ -177,14 +189,7 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
                     finish = null;
 
                 } // END OF mouseReleased
-                private boolean noNodeIntersect(){
-                    boolean bool = true;
-                    for (Node n : model.getNodes()) {
-                        if(n.getBounds().intersects(createCaste())
-                                ||n.getBounds().contains(start)) bool = false;
-                    }                 
-                    return bool;
-                }
+
             }); // END of addMouseListener
             
             this.addMouseMotionListener(new MouseMotionAdapter(){
@@ -207,7 +212,7 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
                  * @param dy the distance to move y
                  */
                 private void moveNode(double dx, double dy){
-                    for(Node n : model.getNodes()){
+                    for(Caste n : model.getCastes()){
                         if(n.contains(start)){
                             n.x += dx;
                             n.y += dy;
@@ -235,6 +240,7 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
                     }   
                 } // END OF moveEdge
             }); // END OF addMouseMotionListener
+            
             this.setVisible(true);
             
         } // END OF ModellingBoard Constructor
@@ -254,49 +260,181 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
             graphics.setComposite(AlphaComposite.getInstance(
                     AlphaComposite.SRC_OVER, 1.0f));
             graphics.setStroke(new BasicStroke(3));
+            graphics.setFont(font);
 
-            
             // Drawing all components
-            for(Node node : model.getNodes()){
-                if(node.isSelected()){
-                    graphics.setColor(Color.BLUE);
-                    graphics.draw(new Rectangle((int) node.x - 3, (int) node.y - 3, 6, 6));
-                    graphics.draw(new Rectangle((int) (node.x + node.width) - 3, (int) node.y - 3, 6, 6));
-                    graphics.draw(new Rectangle((int) node.x - 3, (int) (node.y + node.height) - 3, 6, 6));
-                    graphics.draw(new Rectangle((int) (node.x + node.width) - 3, (int) (node.y + node.height) - 3, 6, 6));
-                } else if(!node.isSelected() && !graphics.getColor().equals(Color.BLACK)) {
-                    graphics.setColor(Color.BLACK);
-                }
-                graphics.draw(node);
-            }
-            for(Edge edge : model.getEdges()){
-                if(edge.isSelected()){
-                    graphics.setColor(Color.BLUE);
-                } else if(!edge.isSelected() && !graphics.getColor().equals(Color.BLACK)) {
-                    graphics.setColor(Color.BLACK);
-                }                    
-                graphics.setStroke(edge.getStroke());
-                graphics.draw(edge); 
-                graphics.drawPolygon(edge.createArrowHead());
-                graphics.setPaint(edge.getArrowFill());
-                graphics.fillPolygon(edge.createArrowHead());
-            }
+            drawNodes(graphics);
+            drawEdges(graphics);
             
             // Handle Drag Outline
+            handleDragOutline(g);
+        } // END OF paint
+        
+        
+        /* ------------------> METHODS FOR DRAWING SHAPES <------------------ */
+        /**
+         * Draws all nodes
+         * @param g2d the graphics package
+         */
+        private void drawNodes(Graphics2D g2d){
+            int innerHeight;
+            for(Caste node : model.getCastes()){
+                if(node.isSelected()){
+                    handleHighlight(g2d, node);
+                } else if(!node.isSelected() && !g2d.getColor().equals(Color.BLACK)) {
+                    g2d.setColor(Color.BLACK);
+                }
+                drawCasteDetailsInnerBoxes(g2d, node);
+                drawCasteDetails(g2d, node);
+                if(node.isNameOnly()) node.height = 80;
+                g2d.draw(node);
+            }
+        } // END OF drawNodes
+        
+        /**
+         * Draws all edges
+         * @param g2d the graphics package
+         */
+        private void drawEdges(Graphics2D g2d){
+            for(Edge edge : model.getEdges()){
+                if(edge.isSelected()) g2d.setColor(Color.BLUE);
+                else if(!edge.isSelected() && !g2d.getColor().equals(Color.BLACK))
+                    g2d.setColor(Color.BLACK);   
+                if(!edge.getTitle().isEmpty()){
+                    g2d.drawString(edge.getTitle(), edge.x1 + 20, edge.y1 - 20);
+                }
+                g2d.setStroke(edge.getStroke());
+                g2d.draw(edge); 
+                g2d.drawPolygon(edge.createArrowHead());
+                g2d.setPaint(edge.getArrowFill());
+                g2d.fillPolygon(edge.createArrowHead());
+            }
+        } // END OF drawEdges
+        
+        private void drawCasteDetails(Graphics2D g2d, Caste node){
+            FontMetrics metrics = g2d.getFontMetrics(font);
+            
+            // Draw Name
+            int x = node.x + (node.width - metrics.stringWidth(node.getName())) / 2; // Center Name Text
+            int y = node.y + 50;
+            g2d.drawString( node.getName(), x, y);
+            
+            if(!node.isNameOnly()){
+                drawStates(g2d, node);
+                drawActions(g2d, node);  
+            }
+        } // END OF drawCasteDetails
+        
+        /**
+         * Sequence to draw the states strings
+         * @param g2d the graphics package
+         * @param node the Caste to get actions from 
+         */
+        private void drawStates(Graphics2D g2d, Caste node){
+            int y = node.y + 96; // (76:Height from top) + (10:Indent) = 86
+            int loopSize = getLoopSize(node, node.getStates());
+            drawProperties(g2d, node.getStates(), node.x + 30, y, loopSize);
+            if(loopSize != node.getStates().size()) 
+                drawContinuation(g2d, node, node.y + 90 + (loopSize * FONT_SIZE));
+        } // END OF drawStates
+        
+        /**
+         * Sequence to draw the actions strings
+         * @param g2d the graphics package
+         * @param node the Caste to get actions from 
+         */
+        private void drawActions(Graphics2D g2d, Caste node){
+            int y = node.y + 90 + ((node.height - 80) / 2);
+            int loopSize = getLoopSize(node, node.getActions());
+            drawProperties(g2d, node.getActions(), node.x + 30, y, loopSize);
+            if(loopSize != node.getActions().size()) 
+                drawContinuation(g2d, node, node.y + 90 + ((node.height - 90) / 2) + (loopSize * FONT_SIZE));
+        } // END OF drawActions
+        
+        /**
+         * Calculates whether the amount of properties would be larger than the 
+         * drawn box
+         * @param node the Caste
+         * @param comparisonList the list to calculate check size of
+         * @return 
+         */
+        private int getLoopSize(Caste node, ArrayList comparisonList){
+            int boxHeight = (node.height - 86) / 2; // Height of the state container
+            int loopSize = comparisonList.size();
+            if(boxHeight - 10 < loopSize * FONT_SIZE){
+                loopSize = (boxHeight / FONT_SIZE) - 2;
+            }
+            return loopSize;
+        }
+        
+        /**
+         * Draws either the actions or states of the Caste
+         * @param g2d the graphics package
+         * @param list the list from which to iterate the details
+         * @param x  the starting x coordinate
+         * @param y the starting y coordinate
+         * @param loopSize the amount of iterations
+         */
+        private void drawProperties(Graphics2D g2d, ArrayList<String> list, 
+                int x, int y, int loopSize){
+            for(int i = 0; i < loopSize; i++){
+                g2d.drawString(list.get(i), x, y);
+                y += FONT_SIZE;
+            }
+        } // END OF drawProperties
+        
+        private void drawContinuation(Graphics2D g2d, Caste node, int startingY){
+            FontMetrics metrics = g2d.getFontMetrics(font);
+            int x = node.x + (node.width - metrics.stringWidth(node.getName())) / 2; // Center Name Text
+            g2d.drawString("-----", x, startingY);
+        }
+        
+        /**
+         * draws the boxes which contain the details of the caste 
+         * (details added separately)
+         * @param g the graphics package
+         * @param c the Caste from which the dimensions are calculated
+         */
+        private void drawCasteDetailsInnerBoxes(Graphics g, Caste c){
+            Graphics2D g2d = (Graphics2D)g;
+            int y = c.y + 20;
+            int height = 50;
+            g2d.drawRect( c.x + 20, y, c.width - 40, height);
+            y += height;
+            height = (c.height - 86) / 2;
+            g2d.drawRect( c.x + 20, y, c.width - 40, height);
+            y += height;
+            g2d.drawRect( c.x + 20, y, c.width - 40, height);
+        } // END OF drawCasteDetailsInnerBoxes
+        
+        /**
+         * Draws the outline as components are dragged
+         * @param g the graphics package
+         */
+        private void handleDragOutline(Graphics g){
+            Graphics2D g2d = (Graphics2D)g;
             if(start != null && finish != null && currentAction != "Select"){
-                graphics.setComposite(AlphaComposite.getInstance(
+                g2d.setComposite(AlphaComposite.getInstance(
                     AlphaComposite.SRC_OVER, 0.4f));
-                graphics.setPaint(Color.BLUE);
+                g2d.setPaint(Color.BLUE);
                 if(currentAction.equalsIgnoreCase("Caste")){
-                    graphics.draw(createCaste());
+                    g2d.draw(createCaste());
                 }       
                 else{
-                    graphics.drawLine(start.x, start.y, finish.x, finish.y);
+                    g2d.drawLine(start.x, start.y, finish.x, finish.y);
                 }
             }
-        } // END OF paint
-                                             
+        } // END OF handleDrag
         
+        private void handleHighlight(Graphics g, Caste c){
+            Graphics2D g2d = (Graphics2D)g;
+            g2d.setColor(Color.BLUE);
+            g2d.draw(new Rectangle((int) c.x - 3, (int) c.y - 3, 6, 6));
+            g2d.draw(new Rectangle((int) (c.x + c.width) - 3, (int) c.y - 3, 6, 6));
+            g2d.draw(new Rectangle((int) c.x - 3, (int) (c.y + c.height) - 3, 6, 6));
+            g2d.draw(new Rectangle((int) (c.x + c.width) - 3, (int) (c.y + c.height) - 3, 6, 6));
+        } // END OF handleHighlight
+                
         /**
          * Method to draw a rectangle used by the Modelling Board to create 
          * the drag outline 
@@ -318,6 +456,7 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
         private JTextField name;
         private ArrayList<JTextField> states;
         private ArrayList<JTextField> actions;
+        private JCheckBox nameOnlyCheckbox;
         private JPanel mainPanel;
         private JDialog popup;
         
@@ -332,17 +471,20 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
          */
         public CasteDetails(Caste caste){
             this.name = new JTextField();
-            this.states = new ArrayList<JTextField>();
-            this.actions = new ArrayList<JTextField>();
+            this.states = new ArrayList<>();
+            this.actions = new ArrayList<>();
+            this.nameOnlyCheckbox = new JCheckBox();
             
             this.popup = new JDialog();
             this.mainPanel = new JPanel();
             this.caste = caste;
+            
             initJTextFieldStorage();
             initComponents();
         } // END OF constructor
 
         /* -------------- METHODS FOR CREATING THE JDIOALOG BOX ------------- */
+        
         /**
          * Creates the frame (window)
          */
@@ -350,6 +492,7 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
             popup.setAlwaysOnTop(true);
             popup.setResizable(true);
             popup.setSize(500, 500);
+            createTitle();
             createMainPanel();
             JScrollPane scrollPane = new JScrollPane(mainPanel);
             popup.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -367,6 +510,18 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
         } // END OF initComponents
         
         /**
+         * Used to create the title of the popup box depending if a caste name 
+         * exists or not
+         */
+        private void createTitle(){
+            if(this.caste.getName().isEmpty()){
+                this.popup.setTitle("Add New Caste");
+            } else {
+                this.popup.setTitle("Edit " + caste.getName() + " Details");
+            }
+        }
+        
+        /**
          * Builds components within the frame
          */
         private void createMainPanel(){
@@ -375,7 +530,7 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
             createNameSection();
             createStatesSection();
             createActionsSection();
-            mainPanel.add(createSubmitButton());
+            createBottomSection();
         } // END OF createMainPanel
         
         /*-------------------- METHODS FOR PANEL CREATION --------------------*/
@@ -415,6 +570,15 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
             }
             mainPanel.add(panel);
             
+        }
+        
+        private void createBottomSection(){
+            JPanel panel = new JPanel();
+            panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+            panel.add(new Label("Display Name Only?"));
+            panel.add(this.nameOnlyCheckbox);
+            panel.add(createSubmitButton());
+            mainPanel.add(panel);
         }
         
         /*----- Methods For individual element creation -----*/
@@ -529,10 +693,14 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
          */
         private void saveData(){
             caste.setName(name.getText());
+            
             caste.getStates().clear();
             caste.getActions().clear();
             for(JTextField state : states) caste.addState(state.getText());
             for(JTextField action : actions) caste.addAction(action.getText());
+            
+            if(nameOnlyCheckbox.isSelected()) caste.setNameOnly(true);
+            else caste.setNameOnly(false);
         } // END OF saveData
         
         /**
@@ -556,6 +724,44 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
         
     } // END OF CasteDetails
     
-         
+    /* ------------------> POPUP TO RETRIEVE EDGE TITLE <------------------ */
+    private class EdgeDetails{
+        private JDialog popup;
+        private JPanel mainPanel;
+        private JTextField titleInput;
+        private Edge edge;
+        
+        public EdgeDetails(Edge edge){
+            this.popup = new JDialog();
+            this.mainPanel = new JPanel();
+            this.titleInput = new JTextField();
+            this.edge = edge;
+            initComponents();
+        } // END OF Constructor
+        
+        private void initComponents(){
+            this.mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS));
+            this.mainPanel.add(new Label("Set Name: "));
+            this.mainPanel.add(titleInput);
+            this.mainPanel.add(createSubmitButton());
+            this.popup.setSize(new Dimension(400, 100));
+            this.popup.add(mainPanel);
+            this.popup.setVisible(true);
+        } // END OF initComponents
+        
+        private JButton createSubmitButton(){
+            JButton button = new JButton("SUBMIT");
+            button.addActionListener(new ActionListener(){
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    edge.setTitle(titleInput.getText());
+                    toggleAvailaibilty();
+                    popup.dispose();
+                } 
+            });
+            return button;
+        } // END OF createSubmitButton
+    } // END OF EdgePopup
+        
 }
                                                                                                                                                                                             

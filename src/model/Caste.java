@@ -5,25 +5,27 @@
  */
 package model;
 
-import java.awt.geom.Rectangle2D;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 
 /**
  *
  * @author Oliver
  */
-public class Caste extends Node{
+public class Caste extends Rectangle{
     private String name;
     private ArrayList<String> states;
     private ArrayList<String> actions;
+    private boolean selected;
+    private boolean nameOnly;
 
-    public Caste(float x, float y, float width, float height) {
+    public Caste(int x, int y, int width, int height) {
         super(x, y, width, height);
         initFields();
     }
     
     // Default size constructor
-    public Caste(float x, float y){
+    public Caste(int x, int y){
         super(x, y, 200, 300);
         initFields();
     }
@@ -32,6 +34,8 @@ public class Caste extends Node{
         this.name = "";
         this.states = new ArrayList<>();
         this.actions = new ArrayList<>();
+        this.selected = false;
+        this.nameOnly = false;
     }
 
     /**
@@ -90,8 +94,36 @@ public class Caste extends Node{
         this.actions.add(action);
     }
     
-    public void cleanStates(){
-        
+    /**
+     * Accessor method for selected
+     * @return the selected
+     */
+    public boolean isSelected(){
+        return selected;
+    }
+    
+    /**
+     * Mutator method for selected
+     * @param selected the boolean to set
+     */
+    public void setSelected(Boolean selected){
+        this.selected = selected;
+    }
+    
+    /**
+     * Accessor method for nameOnly
+     * @return the nameOnly
+     */
+    public boolean isNameOnly(){
+        return nameOnly;
+    }
+    
+    /**
+     * Mutator method for nameOnly
+     * @param nameOnly the boolean to set
+     */
+    public void setNameOnly(Boolean nameOnly){
+        this.nameOnly = nameOnly;
     }
     
 }
