@@ -8,6 +8,7 @@ package model.edge;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Polygon;
+import model.Dragpoint;
 
 /**
  *
@@ -56,7 +57,5 @@ public class Aggregation extends Edge{
         
         return poly;
     }
-
-
-    
+  
 }
