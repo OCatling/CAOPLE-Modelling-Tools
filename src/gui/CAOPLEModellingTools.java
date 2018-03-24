@@ -17,7 +17,6 @@ import model.edge.*;
 public class CAOPLEModellingTools extends JFrame implements Observer{
     private Pieces model;
     private Controller controller;
-    private String currentAction;
     
     
     private JPanel main;
@@ -28,14 +27,14 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
         this.model.addObserver(this);
         this.controller = new Controller(model, this);
         
-        this.currentAction = Const.SELECT;
         this.setEnabled(true);
         this.setTitle("CAOPLE Modelling Tools");
         this.add(createPieceButtons(Const.CONTROLS), BorderLayout.WEST);        
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
         main.add(new ModellingBoard(), BorderLayout.CENTER);
-        main.setOpaque(true);
+        //main.setOpaque(true);
+        main.setBackground(Color.WHITE);
 
         JScrollPane scrollpane = new JScrollPane(main);
         scrollpane.setPreferredSize(new Dimension(1080, 800));
@@ -67,7 +66,7 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
      */
     private Box createPieceButtons(String[] buttonTitles){
         Box btnBox = Box.createVerticalBox();
-        for (String buttonTitle : buttonTitles) {
+        for (String buttonTitle : Const.CONTROLS) {
             btnBox.add(createPieceButton(buttonTitle));
         }
         return btnBox;
@@ -89,11 +88,19 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
         btn.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent event) {
-                currentAction = event.getActionCommand();;
+                controller.setCurrentAction(name);
             } // END OF actionPerformed
         }); // END OF addActionListener
         return btn;
     } // END OF createPieceButton
+    
+    public Caste createCastePopup(Caste caste){
+        return new CasteDetails(caste).caste;
+    }
+    
+    public Edge createEdgePopup(Edge edge){
+        return new EdgeDetails(edge).edge;
+    }
 
     @Override
     public void update(Observable o, Object arg) {
@@ -102,107 +109,81 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
     
     /* --- COMPONENT USED FOR CREATING GRAPHICAL REPRESENTATION OF MODEL --- */
     private class ModellingBoard extends JComponent{
-        private Point start, finish;
         private final Font font;
-        private static final int MOVE = 1;
-        private static final int SCALE = 2;
-        private int selectAction;
-        private int selectedDragpoint;
         
         public ModellingBoard(){
             super();
             this.font = new Font("TimesRoman", Font.PLAIN, Const.FONT_SIZE);
-            this.setPreferredSize(new Dimension(2080, 900));
-            this.setBackground(Color.WHITE);
-            
             initMouseListener();
             initMotionListener();
+            initKeyBindings();
             
             this.setVisible(true);
             
         } // END OF ModellingBoard Constructor
         
+        private void initKeyBindings(){
+            InputMap im = this.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+            ActionMap am = this.getActionMap();
+            
+            // Delete Button
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0, false), "Delete");
+            am.put("Delete", new AbstractAction(){
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    controller.deleteSelected();
+                }     
+            });
+            
+            // Left Button
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0, false), "Left");
+            am.put("Left", new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    controller.moveAllSelected(-2, 0);
+                }
+            });
+            
+            // Right Button
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0, false), "Right");
+            am.put("Right", new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    controller.moveAllSelected(2, 0);
+                }
+            });
+            
+            // Up Button
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0, false), "Up");
+            am.put("Up", new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    controller.moveAllSelected(0, -2);
+                }
+            });
+            
+            // Down Button
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0, false), "Down");
+            am.put("Down", new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    controller.moveAllSelected(0, 2);
+                }
+            });
+        }
         
         private void initMouseListener(){
             this.addMouseListener(new MouseAdapter(){
                 
                 @Override
                 public void mousePressed(MouseEvent event){
-                    start = event.getPoint();
-                    finish = start; 
-                    //Double Click Handler
-                    if(currentAction.equalsIgnoreCase("Select") && event.getClickCount() == 2){
-                        if(model.getIntersectingPiece(start) != null){
-                            Piece c = model.getIntersectingPiece(start);
-                            if(c instanceof Caste) new CasteDetails((Caste) c); 
-                            else if(c instanceof Interaction) new EdgeDetails((Edge) c);
-                            toggleAvailaibilty();
-                        }
-                    } else if (currentAction.equalsIgnoreCase("Select") && event.getClickCount() == 1){
-                        if(model.getIntersectingPiece(start) != null){
-                            if(model.getIntersectingPiece(start).isPointInDragpoint(start.x, start.y)){
-                                selectedDragpoint = model.getIntersectingPiece(start).getDragpointFromPoint(start.x, start.y).getLocation();
-                                selectAction = SCALE;
-                            }
-                            else selectAction = MOVE;
-                        }
-                    }
+                    controller.handleMousePress(event);
                 } // END OF mousePressed
                 
                 @Override
                 public void mouseReleased(MouseEvent event){
-                    Piece p;
-                    if(currentAction.equals(Const.SELECT) ){
-                        if(model.getIntersectingPiece(finish) != null){
-                            p = model.getIntersectingPiece(finish);
-                            if((p.isSelected() && start == finish) || selectAction == SCALE) 
-                                model.getIntersectingPiece(finish).setSelected(false);
-                            else model.getIntersectingPiece(finish).setSelected(true);
-                        }
-                    }
-                    else if(currentAction.equals(Const.CASTE) 
-                            && model.getIntersectingPiece(start) == null ){
-                        Caste c = createCaste();
-                        CasteDetails details = new CasteDetails(c);
-                        model.addPiece(details.caste);   
-                        toggleAvailaibilty();
-                    }
-                    else if(currentAction.equalsIgnoreCase(Const.INTERACTION) 
-                            && model.getIntersectingPiece(start) != null
-                            && model.getIntersectingPiece(finish) != null){
-                        Interaction i = new Interaction(start.x, start.y, event.getX(), event.getY());
-                        EdgeDetails e = new EdgeDetails(i);
-                        model.addPiece(e.edge);
-                        toggleAvailaibilty();
-                    } 
-                    else if(currentAction.equalsIgnoreCase(Const.COMPOSITION) 
-                            && model.getIntersectingPiece(start) != null
-                            && model.getIntersectingPiece(finish) != null){
-                        model.addPiece(new Composition(start.x, start.y, event.getX(), event.getY() ));
-                    }
-                    else if(currentAction.equalsIgnoreCase(Const.AGGREGATION) 
-                            && model.getIntersectingPiece(start) != null
-                            && model.getIntersectingPiece(finish) != null){
-                        model.addPiece(new Aggregation(start.x, start.y, event.getX(), event.getY() ));
-                    }
-                    else if(currentAction.equalsIgnoreCase(Const.INHERITENCE) 
-                            && model.getIntersectingPiece(start) != null
-                            && model.getIntersectingPiece(finish) != null){
-                        model.addPiece(new Inheritence(start.x, start.y, event.getX(), event.getY() ));
-                    }
-                    else if(currentAction.equalsIgnoreCase(Const.MIGRATION) 
-                            && model.getIntersectingPiece(start) != null
-                            && model.getIntersectingPiece(finish) != null){
-                        model.addPiece(new Migration(start.x, start.y, event.getX(), event.getY() ));
-                    
-                    } else {
-                        JOptionPane.showMessageDialog(null, currentAction+ " Must Be Between Two Castes");
-                    }// END if
-             
-                    start = null;
-                    finish = null;
-                    repaint();
-                } // END OF mouseReleased
+                    controller.handleMouseRelease(event);
+                }
                 
             }); // END of addMouseListener
         }
@@ -212,96 +193,10 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
 
                 @Override
                 public void mouseDragged(MouseEvent event){
-                    finish = event.getPoint();
-                    if(currentAction.equalsIgnoreCase("Select") && selectAction == MOVE){
-                        movePiece();
-                    } 
-                    else if(currentAction.equalsIgnoreCase("Select") && selectAction == SCALE){
-                        scalePiece();
-                    }
-                    repaint();
-                    event.consume();
+                    controller.handleMouseDrag(event);
                 } // END OF mouseDragged
                 
             }); // END OF addMouseMotionListener
-        }
-        /* ----------------------> MOVE & SCALE PIECES <--------------------- */
-        /**
-         * Handles the moving of Pieces upon drag
-         * @param dx the distance to move x
-         * @param dy the distance to move y
-         */
-        private void movePiece(){
-            int dx =  finish.x - start.x;
-            int dy =  finish.y - start.y;
-            for(Piece p : model.getPieces()){
-                if(p.getBounds().contains(start)){
-                    p.translate(dx, dy);
-                    p.moveDragpoints(dx, dy);
-                    start.x += dx;
-                    start.y += dy;
-                }
-            } 
-        } // END OF moveNode
-        
-        private void scalePiece(){
-            int dx =  finish.x - start.x;
-            int dy =  finish.y - start.y;
-            for(Piece p : model.getPieces()){
-                if(p.isSelected()){
-                    switch (selectedDragpoint) {
-                        case Const.TOP_LEFT:
-                            p.getDragpoints()[Const.TOP_LEFT].translate(dx, dy);
-                            p.getDragpoints()[Const.TOP_RIGHT].translate(0, dy);
-                            p.getDragpoints()[Const.BOTTOM_LEFT].translate(dx, 0);
-                            p.translate(dx, dy);
-                            p.scale(dx, dy);
-                            break;
-                        case Const.TOP_RIGHT:
-                            if(p.isNameOnly()){
-                                p.getDragpoints()[Const.TOP_RIGHT].translate(dx, 0);
-                                p.scaleWidth(-dx);
-                            } else {
-                                p.getDragpoints()[Const.TOP_RIGHT].translate(dx, dy);
-                                p.getDragpoints()[Const.TOP_LEFT].translate(0, dy);
-                                p.scale(-dx, dy);
-                                p.translate(0, dy);
-                            }
-                            p.getDragpoints()[Const.BOTTOM_RIGHT].translate(dx, 0);
-                            break;
-                        case Const.BOTTOM_LEFT:
-                            if(p.isNameOnly()){
-                                p.getDragpoints()[Const.BOTTOM_LEFT].translate(dx, 0);
-                                p.getDragpoints()[Const.TOP_LEFT].translate(dx, 0);
-                                p.translate(dx, 0);
-                                p.scaleWidth(dx);
-                            } else {
-                                p.getDragpoints()[Const.BOTTOM_LEFT].translate(dx, dy);
-                                p.getDragpoints()[Const.BOTTOM_RIGHT].translate(0, dy);
-                                p.getDragpoints()[Const.TOP_LEFT].translate(dx, 0);
-                                p.scale(dx, -dy);
-                                p.translate(dx, 0);
-                            }
-                            break;
-                        case Const.BOTTOM_RIGHT:
-                            p.getDragpoints()[Const.TOP_RIGHT].translate(dx, 0);
-                            if(p.isNameOnly()){
-                                p.getDragpoints()[Const.BOTTOM_RIGHT].translate(dx, 0);
-                                p.scaleWidth(-dx);
-                            } else {
-                                p.getDragpoints()[Const.BOTTOM_RIGHT].translate(dx, dy);
-                                p.getDragpoints()[Const.BOTTOM_LEFT].translate(0, dy);
-                                p.scale(-dx, -dy);
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-            start.x += dx;
-            start.y += dy;
-            
         }
         
         /* ------------------> METHODS FOR DRAWING SHAPES <------------------ */
@@ -309,14 +204,15 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
         public Dimension getPreferredSize() {
             return new Dimension(2160, 1800);
         }
+        
         @Override
         protected void paintComponent(Graphics g){
             super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g;
-            g2.setColor(Color.BLUE);
-            g2.fillRect(0, 0, getWidth(), getHeight());
-            g2.setColor(getForeground());
+            g.setColor(getBackground());
+            g.fillRect(0, 0, getWidth(), getHeight());
+            g.setColor(getForeground());
         }
+        
         @Override
         public void paint(Graphics g){
             super.paintComponent(g);
@@ -334,7 +230,7 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
             drawPieces(g2d);
             
             // Handle Drag Outline
-            handleDragOutline(g2d);
+            controller.handleDragOutline(g2d);
         } // END OF paint
         
         /**
@@ -367,9 +263,13 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
          * @param caste the caste
          */
         private void drawCaste(Graphics2D g2d, Caste caste){
+            g2d.setColor(Color.WHITE);
+            g2d.fill(caste);
+            g2d.setColor(Color.BLACK);
+            g2d.draw(caste);
             drawCasteDetailsInnerBoxes(g2d, caste);
             drawCasteDetails(g2d, caste);
-            g2d.draw(caste);
+            
         } // END OF drawCastes
         
         /**
@@ -467,8 +367,7 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
          * @param g the graphics package
          * @param c the Caste from which the dimensions are calculated
          */
-        private void drawCasteDetailsInnerBoxes(Graphics g, Caste c){
-            Graphics2D g2d = (Graphics2D)g;
+        private void drawCasteDetailsInnerBoxes(Graphics2D g2d, Caste c){
             int y = c.y + 10;
             int height = 40;
             g2d.drawRect( c.x + 10, y, c.width - 20, height);
@@ -511,24 +410,6 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
         } // END OF drawEdge
         
         /**
-         * Draws the outline as components are dragged
-         * @param g the graphics package
-         */
-        private void handleDragOutline(Graphics2D g2d){
-            if(start != null && finish != null && currentAction != "Select"){
-                g2d.setComposite(AlphaComposite.getInstance(
-                    AlphaComposite.SRC_OVER, 0.4f));
-                g2d.setPaint(Color.BLUE);
-                if(currentAction.equalsIgnoreCase("Caste")){
-                    g2d.draw(createCaste());
-                }       
-                else{
-                    g2d.drawLine(start.x, start.y, finish.x, finish.y);
-                }
-            }
-        } // END OF handleDrag
-        
-        /**
          * Draws the caste with highlighted effects
          * @param g the graphics package
          * @param c the caste to draw highlight of
@@ -541,20 +422,6 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
                 
             }
         } // END OF handleHighlight
-                
-        /**
-         * Method to draw a rectangle used by the Modelling Board to create 
-         * the drag outline 
-         * @return the Caste 
-         */
-        private Caste createCaste(){
-            int x = Math.min(start.x, finish.x);
-            int y = Math.min(start.y, finish.y);
-
-            int width = Math.abs(start.x - finish.x);
-            int height = Math.abs(start.y - finish.y);
-            return new Caste(x, y, width, height); 
-        } // END OF createCaste
      
     } // END OF ModellingBoard
     
