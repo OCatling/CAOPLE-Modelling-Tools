@@ -43,13 +43,25 @@ public class Pieces extends Observable{
     
     /**
      * Return Caste based on point
-     * @param p the point to get Caste from
+     * @param point the point to get Caste from
      * @return the Caste
      */
-    public Piece getIntersectingPiece(Point p){
-        for(Piece c : this.components)
-            if(c.getBounds().contains(p.x, p.y))
-                return c;
+    public Piece getIntersectingPiece(Point point){
+        for(Piece piece : this.components)
+            if(piece.isInBounds(point))
+                return piece;
+        triggerUpdate();
+        return null;
+    } // END OF getIntersectingCaste
+    
+    /* Return Caste based on point
+     * @param point the point to get Caste from
+     * @return the Caste
+     */
+    public Caste getIntersectingCaste(Point point){
+        for(Piece piece : this.components)
+            if(piece.isInBounds(point) && piece instanceof Caste)
+                return (Caste) piece;
         triggerUpdate();
         return null;
     } // END OF getIntersectingCaste

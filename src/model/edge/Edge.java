@@ -12,6 +12,7 @@ import java.awt.Polygon;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import model.Caste;
 import model.Const;
 import model.Dragpoint;
 import model.Piece;
@@ -26,6 +27,8 @@ public abstract class Edge extends Line2D implements Piece {
     private String title;
     private Dragpoint[] dragpoints;
     
+    private Caste[] targetNodes;
+    
     public Edge(double x1, double y1, double x2, double y2){
         this.x1 = (float) x1;
         this.y1 = (float) y1;
@@ -34,6 +37,7 @@ public abstract class Edge extends Line2D implements Piece {
         this.selected = false;
         this.title = "";
         this.dragpoints = new Dragpoint[2];
+        this.targetNodes = new Caste[2];
         initDragpoints();
     }
     
@@ -44,6 +48,7 @@ public abstract class Edge extends Line2D implements Piece {
         this.y2 = y2;
         this.selected = false;
         this.title = "";
+        this.targetNodes = new Caste[2];
         this.dragpoints = new Dragpoint[2];
         initDragpoints();
     }
@@ -130,7 +135,7 @@ public abstract class Edge extends Line2D implements Piece {
     }
 /* ----------------> METHODS FOR HANDLING NAMING CONVENTIONS <--------------- */
     @Override
-    public boolean isNameOnly(){return false;}
+    public Boolean isNameOnly(){return false;}
     @Override
     public void setNameOnly(Boolean nameOnly){}
 /* ----------------> METHODS FOR HANDLING CASTE SELECTION <------------------ */    
@@ -139,7 +144,7 @@ public abstract class Edge extends Line2D implements Piece {
      * @return the selected
      */
     @Override
-    public boolean isSelected(){
+    public Boolean isSelected(){
         return selected;
     }
     
@@ -151,6 +156,12 @@ public abstract class Edge extends Line2D implements Piece {
     public void setSelected(boolean selected){
         this.selected = selected;
     }
+    
+    @Override
+    public Boolean isInBounds(Point p){
+        return this.getBounds().contains(p.x, p.y) 
+                || this.isPointInDragpoint(p.x, p.y);
+    }
 
     
 /* ------------------> METHODS FOR HANDLING THE DRAGPOINTS <----------------- */
@@ -161,7 +172,7 @@ public abstract class Edge extends Line2D implements Piece {
      * @return the boolean 
      */
     @Override
-    public boolean isPointInDragpoint(int x, int y){ 
+    public Boolean isPointInDragpoint(int x, int y){ 
         return getDragpointFromPoint(x, y) != null;   
     }
     
@@ -234,4 +245,46 @@ public abstract class Edge extends Line2D implements Piece {
     public abstract Color getArrowFill();
     
     public abstract Polygon createArrowHead();
+    
+/* -------------------------> TARGET NODE HANDLING <------------------------- */
+    
+    public void setStartTargetNodes( Caste startC, Caste finishC ){
+        this.targetNodes[0] = startC;
+        this.targetNodes[1] = finishC;
+    }
+    
+    public void recalculatePoints(){
+        recalculateStart();
+        recalculateFinish();
+    }
+    
+    private void recalculateStart(){
+        x1 = recalculateX(targetNodes[0], x1, x2);
+        y1 = recalculateY(targetNodes[0], y1, y2);
+    }
+    
+    private void recalculateFinish(){
+        x2 = recalculateX(targetNodes[1], x2, x1);
+        y2 = recalculateY(targetNodes[1], y2, y1);
+    }
+    
+    private float recalculateX(Caste c, float startingX, float finishX){
+        // Left To Right: If Finish Point To The Right Of Target Node
+        if(finishX > c.x + c.width)
+            startingX = c.x + c.width;
+        // Right To Leeft: If Finish Point To The Left Of Target Node
+        else if(finishX < c.x)
+            startingX = c.x;
+        return startingX;
+    }
+    
+    private float recalculateY(Caste c, float startingY, float finishY){
+        if(finishY > c.y + c.height)
+            startingY = c.y + c.height;
+        // Right To Leeft: If Finish Point To The Left Of Target Node
+        else if(finishY < c.y)
+            startingY = c.y;
+        return startingY;        
+    }
+    
 }

@@ -5,6 +5,7 @@
  */
 package model;
 
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 
@@ -114,7 +115,7 @@ public class Caste extends Rectangle implements Piece{
 
 /* ----------------> METHODS FOR HANDLING CASTE SELECTION <------------------ */
     @Override
-    public boolean isSelected(){
+    public Boolean isSelected(){
         return selected;
     } // END OF isSelected
     
@@ -134,7 +135,7 @@ public class Caste extends Rectangle implements Piece{
      * @return the nameOnly
      */ 
     @Override
-    public boolean isNameOnly(){
+    public Boolean isNameOnly(){
         return nameOnly;
     } // END OF isNameOnly
     
@@ -142,6 +143,7 @@ public class Caste extends Rectangle implements Piece{
      * Mutator method for nameOnly
      * @param nameOnly the boolean to set
      */
+    @Override
     public void setNameOnly(Boolean nameOnly){
         this.nameOnly = nameOnly;
     } // END OF setNameOnly
@@ -155,7 +157,7 @@ public class Caste extends Rectangle implements Piece{
      * @return the boolean 
      */
     @Override
-    public boolean isPointInDragpoint(int x, int y){  
+    public Boolean isPointInDragpoint(int x, int y){  
         for(Dragpoint point : dragpoints){
             if(point.getBounds().contains(x, y) || point.contains(x, y)) return true;
         }
@@ -214,5 +216,11 @@ public class Caste extends Rectangle implements Piece{
     public void scaleHeight(int dy){
         height -= dy;
     } // END OF scaleHeight
+    
+    @Override
+    public Boolean isInBounds(Point p){
+        return this.getBounds().contains(p.x, p.y) 
+                || this.isPointInDragpoint(p.x, p.y);
+    }
 
 } // END OF Caste

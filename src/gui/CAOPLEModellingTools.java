@@ -122,54 +122,23 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
             
         } // END OF ModellingBoard Constructor
         
+        /**
+         * Initialize The KeyBoard So Certain Key Presses Have Functions
+         */
         private void initKeyBindings(){
             InputMap im = this.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
             ActionMap am = this.getActionMap();
             
             // Delete Button
-            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0, false), "Delete");
-            am.put("Delete", new AbstractAction(){
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    controller.deleteSelected();
-                }     
-            });
-            
+            controller.setDeleteKey(im, am);
             // Left Button
-            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0, false), "Left");
-            am.put("Left", new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    controller.moveAllSelected(-2, 0);
-                }
-            });
-            
+            controller.setLeftKey(im, am);
             // Right Button
-            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0, false), "Right");
-            am.put("Right", new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    controller.moveAllSelected(2, 0);
-                }
-            });
-            
+            controller.setRightKey(im, am);
             // Up Button
-            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0, false), "Up");
-            am.put("Up", new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    controller.moveAllSelected(0, -2);
-                }
-            });
-            
+            controller.setUpKey(im, am);
             // Down Button
-            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0, false), "Down");
-            am.put("Down", new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    controller.moveAllSelected(0, 2);
-                }
-            });
+            controller.setDownKey(im, am);
         }
         
         private void initMouseListener(){
@@ -248,6 +217,8 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
          */
         private void drawCastes(Graphics2D g2d){
             for(Caste caste : model.getCastes()){
+                g2d.setColor(Color.WHITE);
+                g2d.fill(caste);
                 if(caste.isSelected()){
                     handleHighlight(g2d, caste);
                 } else if(!caste.isSelected() && !g2d.getColor().equals(Color.BLACK)) {
@@ -263,12 +234,9 @@ public class CAOPLEModellingTools extends JFrame implements Observer{
          * @param caste the caste
          */
         private void drawCaste(Graphics2D g2d, Caste caste){
-            g2d.setColor(Color.WHITE);
-            g2d.fill(caste);
-            g2d.setColor(Color.BLACK);
-            g2d.draw(caste);
             drawCasteDetailsInnerBoxes(g2d, caste);
             drawCasteDetails(g2d, caste);
+            g2d.draw(caste);
             
         } // END OF drawCastes
         

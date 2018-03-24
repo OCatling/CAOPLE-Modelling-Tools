@@ -14,15 +14,24 @@ import java.awt.Polygon;
 public class Dragpoint extends Polygon{
     private final int location;
     
+    // Constructor For Int Input
     public Dragpoint(int startingX, int startingY, int location){
         this.npoints = 4;
         this.location = location;
-        initXPoints(startingX );
-        initYPoints(startingY );
-        
+        initXPoints(startingX);
+        initYPoints(startingY);
     }
 
+    // Constructor For Float Input (Convert To Int)
     public Dragpoint(float startingX, float startingY, int location) {
+        this.npoints = 4;
+        this.location = location;
+        initXPoints((int) startingX);
+        initYPoints((int) startingY);
+    }
+    
+    // Constructor For Double Input (Convert To Int)
+    public Dragpoint(double startingX, double startingY, int location) {
         this.npoints = 4;
         this.location = location;
         initXPoints((int) startingX);

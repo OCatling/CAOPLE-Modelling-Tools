@@ -5,6 +5,7 @@
  */
 package model;
 
+import java.awt.Point;
 import java.awt.Shape;
 
 /**
@@ -13,15 +14,16 @@ import java.awt.Shape;
  */
 public interface Piece extends Shape {
 /* ----------------> METHODS FOR HANDLING NAMING CONVENTIONS <--------------- */
-    public boolean isNameOnly();
+    public Boolean isNameOnly();
     public void setNameOnly(Boolean nameOnly);
     
 /* ---------------------> METHODS FOR HANDLING SELECTION <------------------- */
-    public boolean isSelected();
+    public Boolean isSelected();
     public void setSelected(boolean selected);
+    public Boolean isInBounds(Point p);
     
 /* ------------------> METHODS FOR HANDLING THE DRAGPOINTS <----------------- */
-    public boolean isPointInDragpoint(int x, int y);
+    public Boolean isPointInDragpoint(int x, int y);
     public Dragpoint getDragpointFromPoint(int x, int y);
     public Dragpoint[] getDragpoints();
     public void moveDragpoints(int dx, int dy);
